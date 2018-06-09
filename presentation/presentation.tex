@@ -26,6 +26,9 @@
 \usepackage{textcomp}
 \usepackage{dsfont}
 \usepackage{tabularx}
+\usepackage{bm}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
 
 \usepackage{array}
 \newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
@@ -33,7 +36,7 @@
 \newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 
 \title[Time Series Alignment]{Differentiable Dynamic Programming \\ for Time Series Alignment}
-\author[Гарипов и прочие]{Тимур Гарипов, 517 группа \\ Татьяна Шолохова, 517 группа \\ Павел Коваленко, 517 группа \\ Саня Щербаков, 522 группа}
+\author[]{Тимур Гарипов, 517 группа \\ Татьяна Шолохова, 517 группа \\ Павел Коваленко, 517 группа \\ Саня Щербаков, 522 группа}
 
 \date{9 июня 2018}
 
@@ -121,7 +124,7 @@
 	\bigskip
 	Для второй части датасета построим матрицу $\theta \in \mathds{R}^{N_A \times N_B}$. 
 	
-	$\theta_{ij}$ соответствует невероятности того, что в момент времени $j$ играет нота номер $i$, то есть штрафу за предсказание ноты $i$ для момента времени $j$. Этот штраф можно получить из классификатора.
+	$\theta_{ij}$ соответствует отрицательному логарифму вероятности того, что в момент времени $j$ играет нота номер $i$, то есть штрафу за предсказание ноты $i$ для момента времени $j$. Этот штраф можно получить из классификатора.
 	
 	\bigskip
 	Теперь требуется найти в матрице путь из клетки $(1, 1)$ в клетку $(N_A, N_B)$ с наименьшим суммарным штрафом. Эту задачу можно решить за $N_A \times N_B$ операций при помощи динамического программирования.
@@ -147,9 +150,72 @@ $D_{ij} = \min(D_{i-1, j}, D_{i-1, j-1}) + \theta_{ij}$
 
 \end{frame}
 
-\begin{frame}{Модель Тимура}
+\begin{frame}{Differentiable Dynamic Programming}{Smoothed max/min operators}
+Рассмотрим $x \in \mathbb{R}^d$
+\[
+	\min(\bm{x}) = \min\limits_{i=1,\ldots,d} x_i
+\]	
 
+Пусть $\Omega(\cdot): \mathbb{R}^d \to \mathbb{R}$ ~--- cильно выпуклая функция
+\[
+	\min{}_{\Omega}(\bm{x}) = \min\limits_{\bm{q} \in \Delta^d} \langle \bm{q}, \bm{x}\rangle + \Omega(\bm{q}).
+\]
+
+Тогда $\min{}_{\Omega}(\bm{x}$)~--- гладкая функция:
+
+\[
+	\nabla_{\bm{x}} \min{}_{\Omega}(\bm{x}) = \argmin\limits_{\bm{q} \in \Delta^d} \langle \bm{q}, \bm{x}\rangle + \Omega(\bm{q})
+\]
 \end{frame}
+
+\begin{frame}{Differentiable Dynamic Programming}{Пример}
+
+Например:
+\[
+	\Omega(\bm{q}) = \gamma \sum_{i=1}^d q_i \log q_i, \quad \gamma > 0
+\]
+
+\[
+\min{}_{\Omega}(\bm{x}) = \min\limits_{\bm{q} \in \Delta^d} \sum_{i=1}^d q_i x_i + \gamma \sum_{i=1}^d q_i \log q_i 
+\]
+
+\[
+	\hat q_i \propto \exp\left\{-\frac{x_i}{\gamma}\right\}, \quad \hat{\bm{q}} = \mathrm{softmax}\left(-\frac{\bm{x}}{\gamma}\right)= \mathrm{softmin}\left(\frac{\bm{x}}{\gamma}\right)
+\]
+	
+\end{frame}
+
+\begin{frame}{Differentiable Dynamic Programming}{Выравнивание}
+	
+Пусть $\theta \in \mathbb{R}^{N_A \times N_B}$. 
+
+\begin{itemize}
+	\item Алгоритм $\mathrm{DTW}$:
+	\begin{itemize}
+		\item $\mathrm{DTW}(\theta)$~--- величина минимального пути;
+		\item $Y(\theta) \in \{0, 1\}^{N_A \times N_B}$~--- матрица выранивания;
+	\end{itemize}
+	\item Алгоритм  $\mathrm{DTW}_\Omega$:
+	\begin{itemize}
+		\item $\mathrm{DTW}_\Omega(\theta)$~--- приближенная величина минимального пути;
+		\item $Y_\Omega(\theta) = \nabla_\theta \mathrm{DTW}_\Omega(\theta)$~--- сглаженная матрица выранивания;
+	\end{itemize}
+\end{itemize}	
+	Оптимизируемый функционал:
+	\[
+	\mathrm{MAD}(\hat Y, Y) = \|L(Y - \hat Y)^T\|^2_F,
+	\]
+	где $L \in \mathbb{R}^{N_B \times N_B}$~--- нижнетреугольная матрица, заполненная $1$.
+\end{frame}
+
+\begin{frame}{Differentiable Dynamic Programming}{Алгоритм}
+	\begin{figure}		
+		\centering
+		\vspace{-0.2em}
+		\includegraphics[height=0.85\textheight]{./graphics/alg.pdf}
+	\end{figure}
+\end{frame}
+
 
 \begin{frame}{Результаты экспериментов}
 
@@ -159,23 +225,22 @@ $D_{ij} = \min(D_{i-1, j}, D_{i-1, j-1}) + \theta_{ij}$
 Были рассмотрены три модели: 
 \begin{enumerate}
 	\item Простая модель с логистической регрессией в качестве базового классификатора.
-	\item Простая модель со случайным лесом в качестве базового классификатора.
-	\item (Модель Тимура).
+	\item End-to-end модель на основе $\mathrm{DTW}_\Omega$.
 \end{enumerate}
 
 \bigskip
 \centering
-\begin{tabular}{|l|c|c|c|}
+\begin{tabular}{|l|c|c|}
 	\hline
-	Инструмент & Модель 1 & Модель 2 & Модель 3 \\
+	Инструмент & Pretrained & End-to-end \\
 	\hline
-	Скрипка & 0.7804 & 0.4761 & 0 \\
+	Скрипка & 0.7804 & 0.4761 \\
 	\hline
-	Кларнет & 0.4527 & 0.2353 & 0 \\
+	Кларнет & 0.4527 & 0.2353 \\
 	\hline
-	Саксофон & 0.4930 & 0.4677 & 0 \\
+	Саксофон & 0.4930 & 0.4677 \\
 	\hline
-	Фагот & 0.6001 & 0.5650 & 0 \\
+	Фагот & 0.6001 & 0.5650 \\
 	\hline
 \end{tabular}
 
