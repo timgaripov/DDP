@@ -1,12 +1,13 @@
 \documentclass[unicode, dvipsnames]{beamer}
 
-\usetheme{Madrid} %тема
-\usecolortheme{whale} %цветовая гамма
+\usetheme[progressbar=head,block=fill]{metropolis}
+%\usecolortheme{whale} %цветовая гамма
 %Выбирать тему и цветовую гамму презентации очень удобно на http://www.hartwork.org/beamer-theme-matrix/
 
 \usefonttheme[onlylarge]{structurebold} % названия и текст в колонтитулах выводится полужирным шрифтом.
 \usefonttheme[onlymath]{serif}  % привычный шрифт для математических формул
 \setbeamerfont*{frametitle}{size=\normalsize,series=\bfseries} % шрифт заголовков слайдов
+
 
 %Русификация
 \usepackage[utf8]{inputenc}
@@ -14,6 +15,8 @@
 
 %Для вставки рисунков
 \usepackage{graphics, graphicx}
+\usepackage{subfigure}
+
 \usepackage{epstopdf}
 \usepackage[normalem]{ulem}
 \usepackage{transparent}
@@ -27,6 +30,9 @@
 \usepackage{dsfont}
 \usepackage{tabularx}
 \usepackage{bm}
+
+\definecolor{MyBackground}{rgb}{0.995,0.995,0.995}
+\setbeamercolor{normal text}{fg=black,bg=MyBackground}
 
 \DeclareMathOperator*{\argmin}{arg\,min}
 
@@ -65,7 +71,7 @@
 Каждая запись состоит из четырех дорожек, соответствующих четырем инструментам --- скрипка, кларнет, саксофон и фагот. Есть как записи отдельных дорожек, так и сводная запись всех инструментов.
 
 \bigskip
-Для каждой дорожки дана ее идеальная нотная запись, однако фактическая игра от нее немного отклоняется. Также для всех дорожек дано правильное выравнивание аудио-- и нотной записи. Для инструментов в выборке представлено от 15 до 25 различных нот.
+Для каждой дорожки дана ее идеальная нотная запись, однако фактическая игра от нее немного отклоняется. Также для всех дорожек дано правильное выравнивание аудио и нотной записи. Для инструментов в выборке представлено от 15 до 25 различных нот.
 
 \end{frame}
 
@@ -92,7 +98,7 @@
 
 \begin{frame}{Метрика качества}
 
-Выбирая мелкие интервалы разбиения аудиозаписи, можно добиться, чтобы в каждый момент времени играла только одна нота. Тогда целью задачи является предсказать каждого момента разбиения какая нота играет. 
+Выбирая мелкие интервалы разбиения аудиозаписи, можно добиться, чтобы в каждый момент времени играла только одна нота. Тогда целью задачи является предсказать для каждого момента разбиения какая нота играет. 
 
 \bigskip
 Для матрицы это ограничение означает, что в каждом столбце может быть не больше одной единицы. Для пути в графе это ограничение равносильно запрету переходов вниз.
@@ -224,7 +230,7 @@ $D_{ij} = \min(D_{i-1, j}, D_{i-1, j-1}) + \theta_{ij}$
 Выборка была разбита на тренировочную и валидационную, по пять записей в каждой из частей.
 
 \bigskip
-Были рассмотрены три модели: 
+Были рассмотрены две модели: 
 \begin{enumerate}
 	\item Простая модель с логистической регрессией в качестве базового классификатора.
 	\item End-to-end модель на основе $\mathrm{DTW}_\Omega$.
@@ -248,23 +254,38 @@ $D_{ij} = \min(D_{i-1, j}, D_{i-1, j-1}) + \theta_{ij}$
 
 \end{frame}
 
+\begin{frame}{Результаты экспериментов}
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.6\textwidth]{./graphics/fig_7.pdf}\\
+		\includegraphics[width=0.6\textwidth]{./graphics/fig_9.pdf}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Результаты экспериментов}
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.6\textwidth]{./graphics/fig_v5.pdf}\\
+		\includegraphics[width=0.6\textwidth]{./graphics/fig_v9.pdf}
+	\end{figure}
+\end{frame}
+
 \begin{frame}{Вклад участников}
 
 {\bfseries Тимур Гарипов}\\ 
 
-Реализация метода End-to-end на основе алгоритма $DTW_{\Omega}$.\\
+Реализация метода End-to-end на основе алгоритма $DTW_{\Omega}$. (PyTorch)\\
 \bigskip
 {\bfseries Татьяна Шолохова}\\ 
 
-Подготовка данных и извлечение признаков для классификатора.\\
+Подготовка данных и извлечение признаков для классификатора.\\(midi parsing + librosa)\\
 \bigskip
 {\bfseries Павел Коваленко}\\
 
-Реализация простой модели с логистической регрессией в качестве базового классификатора.\\
+Реализация простой модели с логистической регрессией в качестве базового классификатора. (Numpy + scikit-learn)\\
 \bigskip
-{\bfseries Саня Щербаков} \\
-
-Проведение экспериментов. Рефакторинг и документация кода. 
+{\bfseries Александр} \\
+Проведение экспериментов. Рефакторинг и документация кода.
 
 \end{frame}
 
@@ -278,6 +299,11 @@ $D_{ij} = \min(D_{i-1, j}, D_{i-1, j-1}) + \theta_{ij}$
 
 Тимур Гарипов, 517 группа \\ Татьяна Шолохова, 517 группа \\ Павел Коваленко, 517 группа \\ Саня Щербаков, 522 группа
 
+\end{frame}
+
+\begin{frame}{Ссылки}
+ Arthur Mensch, Mathieu Blondel. Differentiable Dynamic Programming for Structured Prediction and Attention. ICML 2018. \url{https://arxiv.org/abs/1802.03676v2}
+	
 \end{frame}
 
 \end{document}
